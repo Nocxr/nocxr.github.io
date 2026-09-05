@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Game Math Basics</title>
+  <title>Game Math Guide</title>
   <style>
     :root{color-scheme:light dark;--bg:#f4f6fa;--panel:#fff;--panel2:#edf1f7;--text:#19202b;--muted:#657184;--border:#d8dee9;--accent:#3867f4;--accent2:#f06a3c;--good:#16845b;--shadow:0 12px 36px rgba(22,32,50,.10)}
     @media(prefers-color-scheme:dark){:root{--bg:#11151c;--panel:#1a202a;--panel2:#222a36;--text:#edf2fa;--muted:#9ba8ba;--border:#343e4d;--accent:#6e91ff;--accent2:#ff8a5e;--good:#42c48a;--shadow:0 12px 36px rgba(0,0,0,.24)}}
@@ -20,14 +20,38 @@
     .footer-actions{display:flex;justify-content:space-between;gap:12px;margin-top:26px;padding-top:18px;border-top:1px solid var(--border)}
     @media(max-width:800px){.shell{padding:14px}.layout{grid-template-columns:1fr}.course-nav{position:static}.nav-list{display:flex;overflow-x:auto;gap:4px}.nav-button{min-width:55px;width:auto;display:block;text-align:center}.nav-button span:last-child{display:none}.explain{grid-template-columns:1fr}.readout{grid-template-columns:1fr}.visual{padding:7px}}
   </style>
+  <style>
+    html,body{max-width:100%;overflow-x:clip}
+    .shell,.layout,.course-nav,.lesson,.visual,.lesson-details,.explain,.box,.controls{min-width:0;max-width:100%}
+    canvas,svg,img,pre{max-width:100%}
+    .math-table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    @supports not (overflow:clip){body{overflow-x:hidden}}
+    @media(max-width:520px){
+      .shell{padding:10px}
+      .hero{margin-bottom:12px}
+      .hero h1{font-size:28px;overflow-wrap:anywhere}
+      .course-nav{padding:8px}
+      .nav-list{max-width:100%}
+      .nav-button{flex:0 0 48px}
+      .lesson{padding:16px 12px;border-radius:14px}
+      .visual{padding:6px}
+      .visual canvas{width:100%;min-height:220px}
+      .controls{align-items:stretch}
+      .controls>*{width:100%;min-width:0}
+      .controls label{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+      .controls input[type=range]{width:100%;max-width:100%}
+      .math-table td,.math-table th{padding:6px 8px;white-space:nowrap}
+      .footer-actions{flex-direction:column-reverse}
+      .footer-actions .btn{width:100%}
+    }
+  </style>
 </head>
 <body>
   <main class="shell">
     <header class="hero"><h1>Game Math Basics</h1><p>Eight short, visual lessons for the math you will repeatedly use when building movement, cameras, physics, and gameplay systems.</p></header>
     <div class="layout">
       <nav class="course-nav" aria-label="Course lessons">
-        <div class="progress-label"><span>Course progress</span><strong id="progressText">0 / 8</strong></div>
-        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-label"><strong>Browse sections</strong></div>
         <div class="nav-list" id="navList"></div>
       </nav>
       <article class="lesson">
@@ -41,7 +65,7 @@
           <section class="box"><h3>The idea</h3><p id="idea"></p><div class="formula" id="formula"></div></section>
           <section class="box"><h3>Game-code connection</h3><pre><code id="code"></code></pre></section>
         </div>
-        <div class="footer-actions"><button class="btn" id="previous">← Previous</button><button class="btn primary" id="complete">Mark complete & next →</button></div>
+        <div class="footer-actions"><button class="btn" id="previous">← Previous entry</button><button class="btn primary" id="complete">Next entry →</button></div>
       </article>
     </div>
   </main>
@@ -59,7 +83,7 @@
     const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
     const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
     const ui={nav:document.getElementById('navList'),num:document.getElementById('lessonNumber'),title:document.getElementById('lessonTitle'),lead:document.getElementById('lessonLead'),controls:document.getElementById('controls'),readout:document.getElementById('readout'),idea:document.getElementById('idea'),formula:document.getElementById('formula'),code:document.getElementById('code'),prev:document.getElementById('previous'),complete:document.getElementById('complete')};
-    let index=0,last=performance.now(),state={},done=new Set(JSON.parse(localStorage.getItem('gameMathBasicsDone')||'[]'));
+    let index=0,last=performance.now(),state={};
     const C=()=>({panel:css('--panel'),panel2:css('--panel2'),text:css('--text'),muted:css('--muted'),border:css('--border'),accent:css('--accent'),accent2:css('--accent2'),good:css('--good')});
     function line(x1,y1,x2,y2,color,w=2,dash=[]){ctx.save();ctx.strokeStyle=color;ctx.lineWidth=w;ctx.setLineDash(dash);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore()}
     function arrow(x1,y1,x2,y2,color,label=''){line(x1,y1,x2,y2,color,4);const a=Math.atan2(y2-y1,x2-x1);ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-13*Math.cos(a-.45),y2-13*Math.sin(a-.45));ctx.lineTo(x2-13*Math.cos(a+.45),y2-13*Math.sin(a+.45));ctx.fill();if(label){ctx.fillStyle=C().text;ctx.font='15px system-ui';ctx.fillText(label,x2+8,y2-8)}}
@@ -70,8 +94,8 @@
     function button(label,fn,primary=false){const b=document.createElement('button');b.className='btn'+(primary?' primary':'');b.textContent=label;b.onclick=fn;ui.controls.appendChild(b);return b}
     function slider(label,min,max,value,step,fn){const l=document.createElement('label');const span=document.createElement('span');span.textContent=`${label}: ${value}`;const input=document.createElement('input');input.type='range';input.min=min;input.max=max;input.value=value;input.step=step;input.oninput=()=>{span.textContent=`${label}: ${input.value}`;fn(Number(input.value))};l.append(span,input);ui.controls.appendChild(l);return input}
     function resetState(){state={t:0,playing:true,x:450,y:225,mouseX:620,mouseY:120,fps:30,mode:'correct',accel:80,angle:45,trail:[],lerp:90,constant:90};ui.controls.innerHTML='';if(index===0)button('Reset point',()=>{state.mouseX=600;state.mouseY=125});if(index===2){button('Cardinal (1, 0)',()=>{state.mouseX=650;state.mouseY=225});button('Diagonal (1, −1)',()=>{state.mouseX=650;state.mouseY=75},true)}if(index===3){slider('Simulated FPS',15,144,30,1,v=>{state.fps=v;state.t=0});const b=button('Correct: use delta time',()=>{state.mode=state.mode==='correct'?'wrong':'correct';b.textContent=state.mode==='correct'?'Correct: use delta time':'Wrong: per frame';b.setAttribute('aria-pressed',state.mode==='correct');state.t=0},true)}if(index===4)slider('Acceleration',20,160,80,5,v=>state.accel=v);if(index===5)slider('Target angle',0,180,45,1,v=>state.angle=v);if(index===6)button('Restart race',()=>{state.t=0;state.lerp=90;state.constant=90},true);if(index===7){slider('Launch angle',15,75,45,1,v=>{state.angle=v;state.t=0;state.trail=[]});button('Restart',()=>{state.t=0;state.trail=[]},true)}}
-    function renderLesson(){const l=lessons[index];ui.num.textContent=`Lesson ${index+1} of ${lessons.length}`;ui.title.textContent=l.title;ui.lead.textContent=l.lead;ui.idea.textContent=l.idea;ui.formula.textContent=l.formula;ui.code.textContent=l.code;ui.readout.innerHTML=l.stats.map(s=>`<div class="stat"><small>${s}</small><strong>—</strong></div>`).join('');ui.prev.disabled=index===0;ui.complete.textContent=done.has(index)?(index===lessons.length-1?'Completed ✓':'Next lesson →'):'Mark complete & next →';[...ui.nav.children].forEach((b,i)=>b.classList.toggle('active',i===index));resetState()}
-    function updateProgress(){document.getElementById('progressText').textContent=`${done.size} / ${lessons.length}`;document.getElementById('progressFill').style.width=`${done.size/lessons.length*100}%`;[...ui.nav.children].forEach((b,i)=>b.classList.toggle('done',done.has(i)));localStorage.setItem('gameMathBasicsDone',JSON.stringify([...done]))}
+    function renderLesson(){const l=lessons[index];ui.num.textContent=`Entry ${index+1} of ${lessons.length}`;ui.title.textContent=l.title;ui.lead.textContent=l.lead;ui.idea.textContent=l.idea;ui.formula.textContent=l.formula;ui.code.textContent=l.code;ui.readout.innerHTML=l.stats.map(s=>`<div class="stat"><small>${s}</small><strong>—</strong></div>`).join('');ui.prev.disabled=index===0;ui.complete.textContent=index===lessons.length-1?'End of guide':'Next entry →';[...ui.nav.children].forEach((b,i)=>b.classList.toggle('active',i===index));resetState()}
+    function updateProgress(){}
     lessons.forEach((l,i)=>{const b=document.createElement('button');b.className='nav-button';b.innerHTML=`<span class="num">${i+1}</span><span>${l.title}</span>`;b.onclick=()=>{index=i;renderLesson()};ui.nav.appendChild(b)});
     canvas.addEventListener('pointerdown',e=>{if(index>2)return;const r=canvas.getBoundingClientRect();state.mouseX=(e.clientX-r.left)*canvas.width/r.width;state.mouseY=(e.clientY-r.top)*canvas.height/r.height;canvas.setPointerCapture(e.pointerId)});canvas.addEventListener('pointermove',e=>{if(!canvas.hasPointerCapture(e.pointerId)||index>2)return;const r=canvas.getBoundingClientRect();state.mouseX=(e.clientX-r.left)*canvas.width/r.width;state.mouseY=(e.clientY-r.top)*canvas.height/r.height});
     function drawLesson(dt){grid();const c=C(),cx=450,cy=225;
@@ -84,8 +108,10 @@
       if(index===7){state.t+=dt;const angle=state.angle*Math.PI/180,speed=170,g=130,vx=Math.cos(angle)*speed,vy=Math.sin(angle)*speed;let t=state.t%((2*vy/g)+.8);if(t>2*vy/g)t=2*vy/g;const x=70+vx*t,y=350-(vy*t-.5*g*t*t);state.trail.push([x,y]);if(state.trail.length>160||t<dt*2)state.trail=[];ctx.strokeStyle=c.accent;ctx.lineWidth=3;ctx.beginPath();state.trail.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.stroke();dot(x,y,c.accent,9);arrow(x,y,x+vx*.35,y-(vy-g*t)*.35,c.accent,'velocity');arrow(70,350,70+Math.cos(angle)*100,350-Math.sin(angle)*100,c.accent2,'launch');line(30,350,870,350,c.border,4);setStats([`${state.angle.toFixed(0)}°`,`${vx.toFixed(1)} px/s`,`${(vy-g*t).toFixed(1)} px/s`])}
     }
     function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;drawLesson(dt);requestAnimationFrame(frame)}
-    ui.prev.onclick=()=>{if(index>0){index--;renderLesson()}};ui.complete.onclick=()=>{done.add(index);updateProgress();if(index<lessons.length-1){index++;renderLesson()}else ui.complete.textContent='Course complete ✓'};
-    updateProgress();renderLesson();requestAnimationFrame(frame);
+    ui.prev.onclick=()=>{if(index>0){index--;renderLesson()}};ui.complete.onclick=()=>{if(index<lessons.length-1){index++;renderLesson()}};
   </script>
+  <script src="expansion.js"></script>
+  <script src="guide.js"></script>
+  <script>updateProgress();renderLesson();requestAnimationFrame(frame);</script>
 </body>
 </html>
